@@ -10,13 +10,40 @@ import UIKit
 
 class ToDoListViewController: UITableViewController{
     
-    let list = ["move data","cast data","hello data"]
+    var list = ["move data","cast data","hello data"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
     }
-
+    
+    
+    
+    
+    //MARK: -Add New Item
+    @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
+        
+        var textField = UITextField()
+        // alert will show what the user whant to do
+        let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
+        let action =  UIAlertAction(title: "add item", style: .default) { (action) in
+            // action is the user pressed the button
+            print(textField.text!)
+            self.list.append(textField.text!)
+            self.tableView.reloadData()
+        }
+        alert.addTextField { (alertTextField) in
+            alertTextField.placeholder = "Create New Item"
+            textField = alertTextField
+        }
+        alert.addAction(action)
+        present(alert, animated: true, completion: nil)
+    }
+    
+    
+    
+    //MARK: -TableView
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         list.count
     }
