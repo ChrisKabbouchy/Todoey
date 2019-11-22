@@ -11,9 +11,15 @@ import UIKit
 class ToDoListViewController: UITableViewController{
     
     var list = ["move data","cast data","hello data"]
+    let defaults =  UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if let items = defaults.array(forKey: "ToDoItem")  as? [String] {
+            list = items
+
+        }
         // Do any additional setup after loading the view.
     }
     
@@ -30,6 +36,7 @@ class ToDoListViewController: UITableViewController{
             // action is the user pressed the button
             print(textField.text!)
             self.list.append(textField.text!)
+            self.defaults.set(self.list, forKey: "ToDoItem")
             self.tableView.reloadData()
         }
         alert.addTextField { (alertTextField) in
@@ -41,7 +48,7 @@ class ToDoListViewController: UITableViewController{
     }
     
     
-    
+     
     //MARK: -TableView
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
