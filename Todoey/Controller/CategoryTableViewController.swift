@@ -1,34 +1,28 @@
 //
-//  ViewController.swift
+//  CategoryTableViewController.swift
 //  Todoey
 //
-//  Created by Christian Kabouchy on 11/20/19.
+//  Created by Christian Kabouchy on 11/24/19.
 //  Copyright © 2019 Christian Kabouchy. All rights reserved.
 //
 
 import UIKit
 import CoreData
 
-class ToDoListViewController: UITableViewController{
+class CategoryTableViewController: UITableViewController {
     
-    @IBOutlet weak var searchBar: UISearchBar!
-    
-    var list = [ToDoData]()
+    var listCategory = [CategoryData]()
     let dataPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+
+    @IBOutlet weak var searchBar: UISearchBar!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         loadData()
-        // Do any additional setup after loading the view.
+
     }
-    
-    
-    
-    
-    //MARK: -Add New Item
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
-        
         var textField = UITextField()
         
         // alert will show what the user whant to do
@@ -36,10 +30,10 @@ class ToDoListViewController: UITableViewController{
         let action =  UIAlertAction(title: "add item", style: .default) { (action) in
             // action is the user pressed the button
             
-            let newItem = ToDoData(context: self.context)
-            newItem.item = textField.text!
-            newItem.selected = false
-            self.list.append(newItem)
+            let newItem = CategoryData(context: self.context)
+            newItem.name = textField.text!
+            
+            self.listCategory.append(newItem)
             self.saveData()
             
             //self.defaults.set(self.list.last?.item, forKey: "ToDoItem")
@@ -54,21 +48,21 @@ class ToDoListViewController: UITableViewController{
     }
     
     
+    //MARK: -Data Manipulation
     
-    //MARK: -Save and Load new data from/to core data
     func saveData(){
         
         do{
             try context.save()
-        }catch{ 
+        }catch{
             print("error while saving context\(error)")
         }
     }
     
-    func loadData(with request : NSFetchRequest<ToDoData> = ToDoData.fetchRequest()) {
+    func loadData(with request : NSFetchRequest<CategoryData> = CategoryData.fetchRequest()) {
         
         do {
-            list = try context.fetch(request)
+            listCategory = try context.fetch(request)
         } catch  {
             print("error while fetching contex\(error)")
         }
@@ -77,49 +71,29 @@ class ToDoListViewController: UITableViewController{
     }
     
     
-    
-    //MARK: -TableView
+    //MARK: - TableView Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        list.count
+        return listCategory.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
-        cell.textLabel?.text = list[indexPath.row].item
-        
-        let item = list[indexPath.row].selected
-        cell.accessoryType = item ? .checkmark : .none
-        
+        let  cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell" , for: indexPath)
+        cell.textLabel?.text = listCategory[indexPath.row].name
         return cell
-    }
-    
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        list[indexPath.row].selected = !list[indexPath.row].selected
-        saveData()
-        
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        }else{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
-        
-        
-        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
+
 //MARK: -SearchBar functions
 
-extension ToDoListViewController : UISearchBarDelegate{
+extension CategoryTableViewController : UISearchBarDelegate{
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         
-        let request : NSFetchRequest<ToDoData> = ToDoData.fetchRequest()
-        request.predicate = NSPredicate(format: "item CONTAINS[cd] %@", searchBar.text!)
-        request.sortDescriptors = [NSSortDescriptor(key: "item", ascending: true)]
+        let request : NSFetchRequest<CategoryData> = CategoryData.fetchRequest()
+        request.predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
+        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         loadData(with: request)
     }
     
@@ -137,4 +111,4 @@ extension ToDoListViewController : UISearchBarDelegate{
         }
     }
 }
-
+   
