@@ -12,22 +12,21 @@ import CoreData
 class CategoryTableViewController: UITableViewController {
     
     var listCategory = [CategoryData]()
-    let dataPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-
+    
     @IBOutlet weak var searchBar: UISearchBar!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         loadData()
-
+        
     }
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField = UITextField()
         
         // alert will show what the user whant to do
-        let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
-        let action =  UIAlertAction(title: "add item", style: .default) { (action) in
+        let alert = UIAlertController(title: "Add new Category", message: "", preferredStyle: .alert)
+        let action =  UIAlertAction(title: "Add Category", style: .default) { (action) in
             // action is the user pressed the button
             
             let newItem = CategoryData(context: self.context)
@@ -40,7 +39,7 @@ class CategoryTableViewController: UITableViewController {
             self.tableView.reloadData()
         }
         alert.addTextField { (alertTextField) in
-            alertTextField.placeholder = "Create New Item"
+            alertTextField.placeholder = "Create New Category"
             textField = alertTextField
         }
         alert.addAction(action)
@@ -82,7 +81,19 @@ class CategoryTableViewController: UITableViewController {
         cell.textLabel?.text = listCategory[indexPath.row].name
         return cell
     }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "goToList", sender: self)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let destinationVC = segue.destination as! ToDoListViewController
+        let indexPath = tableView.indexPathForSelectedRow!
+        destinationVC.parentCategory = listCategory[indexPath.row]
+        
+    }
 }
+
 
 
 //MARK: -SearchBar functions
@@ -111,4 +122,4 @@ extension CategoryTableViewController : UISearchBarDelegate{
         }
     }
 }
-   
+
