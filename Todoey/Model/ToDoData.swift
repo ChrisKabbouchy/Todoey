@@ -12,5 +12,6 @@ import RealmSwift
 class ToDoData: Object {
     @objc dynamic var item : String = ""
     @objc dynamic var selected : Bool = false
+    @objc dynamic var dateCreated : Date?
     var parentCategory = LinkingObjects(fromType: CategoryData.self, property: "items")
 }

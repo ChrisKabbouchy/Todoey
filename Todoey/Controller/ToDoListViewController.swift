@@ -48,6 +48,7 @@ class ToDoListViewController: UITableViewController{
                         let newItem = ToDoData()
                         newItem.item = textField.text!
                         newItem.selected = false
+                        newItem.dateCreated = Date()
                         currentCategory.items.append(newItem)
                     }
                 } catch  {
@@ -74,19 +75,6 @@ class ToDoListViewController: UITableViewController{
         
         list = parentCategory?.items.sorted(byKeyPath: "item", ascending: true )
         
-        //        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", parentCategory!.name!)
-        //
-        //        if let additionalPredicate = predicate{
-        //            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate,additionalPredicate])
-        //        }else{
-        //            request.predicate = categoryPredicate
-        //        }
-        //        do {
-        //            list = try context.fetch(request)
-        //        } catch  {
-        //            print("error while fetching contex\(error)")
-        //        }
-        
         tableView.reloadData()
     }
     
@@ -112,10 +100,18 @@ class ToDoListViewController: UITableViewController{
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//
-//        list[indexPath.row].selected = !list[indexPath.row].selected
-//        saveData()
-//
+
+        if let item = list?[indexPath.row] {
+            do {
+                try realm.write {
+                    item.selected = !item.selected
+                    //realm.delete(item)
+                }
+            } catch  {
+                print(error)
+            }
+        }
+
         if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
             tableView.cellForRow(at: indexPath)?.accessoryType = .none
         }else{
@@ -129,28 +125,26 @@ class ToDoListViewController: UITableViewController{
 
 //MARK: -SearchBar functions
 
-//extension ToDoListViewController : UISearchBarDelegate{
-//
-//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-//
-//        let request : NSFetchRequest<ToDoData> = ToDoData.fetchRequest()
-//        let predicate = NSPredicate(format: "item CONTAINS[cd] %@", searchBar.text!)
-//        request.sortDescriptors = [NSSortDescriptor(key: "item", ascending: true)]
-//        loadData(with: request,predicate: predicate)
-//    }
-//
-//    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-//        loadData()
-//    }
-//
-//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        if searchBar.text?.count == 0{
-//            loadData()
-//            DispatchQueue.main.async {
-//                searchBar.resignFirstResponder()
-//            }
-//            
-//        }
-//    }
-//}
+extension ToDoListViewController : UISearchBarDelegate{
+
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+
+        list = list?.filter("item CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
+        tableView.reloadData()
+    }
+
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        loadData()
+    }
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0{
+            loadData()
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+            
+        }
+    }
+}
 
