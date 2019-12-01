@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class ToDoListViewController: UITableViewController{
     
@@ -19,9 +19,9 @@ class ToDoListViewController: UITableViewController{
     
     @IBOutlet weak var searchBar: UISearchBar!
     
-    var list = [ToDoData]()
-    let dataPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    var list : Results<ToDoData>?
+    
+    let realm = try! Realm()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,13 +41,20 @@ class ToDoListViewController: UITableViewController{
         let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
         let action =  UIAlertAction(title: "add item", style: .default) { (action) in
             // action is the user pressed the button
-            
-            let newItem = ToDoData(context: self.context)
-            newItem.item = textField.text!
-            newItem.selected = false
-            newItem.parentCategory = self.parentCategory
-            self.list.append(newItem)
-            self.saveData()
+            if let currentCategory = self.parentCategory{
+                
+                do {
+                    try self.realm.write {
+                        let newItem = ToDoData()
+                        newItem.item = textField.text!
+                        newItem.selected = false
+                        currentCategory.items.append(newItem)
+                    }
+                } catch  {
+                    print(error)
+                }
+                
+            }
             
             //self.defaults.set(self.list.last?.item, forKey: "ToDoItem")
             self.tableView.reloadData()
@@ -63,29 +70,22 @@ class ToDoListViewController: UITableViewController{
     
     
     //MARK: -Save and Load new data from/to core data
-    func saveData(){
+    func loadData() {
         
-        do{
-            try context.save()
-        }catch{ 
-            print("error while saving context\(error)")
-        }
-    }
-    
-    func loadData(with request : NSFetchRequest<ToDoData> = ToDoData.fetchRequest(), predicate : NSPredicate? = nil) {
+        list = parentCategory?.items.sorted(byKeyPath: "item", ascending: true )
         
-        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", parentCategory!.name!)
-        
-        if let additionalPredicate = predicate{
-            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate,additionalPredicate])
-        }else{
-            request.predicate = categoryPredicate
-        }
-        do {
-            list = try context.fetch(request)
-        } catch  {
-            print("error while fetching contex\(error)")
-        }
+        //        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", parentCategory!.name!)
+        //
+        //        if let additionalPredicate = predicate{
+        //            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate,additionalPredicate])
+        //        }else{
+        //            request.predicate = categoryPredicate
+        //        }
+        //        do {
+        //            list = try context.fetch(request)
+        //        } catch  {
+        //            print("error while fetching contex\(error)")
+        //        }
         
         tableView.reloadData()
     }
@@ -95,25 +95,27 @@ class ToDoListViewController: UITableViewController{
     //MARK: -TableView
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        list.count
+        list?.count ?? 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
-        cell.textLabel?.text = list[indexPath.row].item
         
-        let item = list[indexPath.row].selected
-        cell.accessoryType = item ? .checkmark : .none
+        cell.textLabel?.text = list?[indexPath.row].item ?? "No Data"
+        
+        if let item = list?[indexPath.row].selected{
+            cell.accessoryType = item ? .checkmark : .none
+        }
         
         return cell
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        list[indexPath.row].selected = !list[indexPath.row].selected
-        saveData()
-        
+//
+//        list[indexPath.row].selected = !list[indexPath.row].selected
+//        saveData()
+//
         if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
             tableView.cellForRow(at: indexPath)?.accessoryType = .none
         }else{
@@ -127,28 +129,28 @@ class ToDoListViewController: UITableViewController{
 
 //MARK: -SearchBar functions
 
-extension ToDoListViewController : UISearchBarDelegate{
-    
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        
-        let request : NSFetchRequest<ToDoData> = ToDoData.fetchRequest()
-        let predicate = NSPredicate(format: "item CONTAINS[cd] %@", searchBar.text!)
-        request.sortDescriptors = [NSSortDescriptor(key: "item", ascending: true)]
-        loadData(with: request,predicate: predicate)
-    }
-    
-    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        loadData()
-    }
-    
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchBar.text?.count == 0{
-            loadData()
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
-            
-        }
-    }
-}
+//extension ToDoListViewController : UISearchBarDelegate{
+//
+//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+//
+//        let request : NSFetchRequest<ToDoData> = ToDoData.fetchRequest()
+//        let predicate = NSPredicate(format: "item CONTAINS[cd] %@", searchBar.text!)
+//        request.sortDescriptors = [NSSortDescriptor(key: "item", ascending: true)]
+//        loadData(with: request,predicate: predicate)
+//    }
+//
+//    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+//        loadData()
+//    }
+//
+//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+//        if searchBar.text?.count == 0{
+//            loadData()
+//            DispatchQueue.main.async {
+//                searchBar.resignFirstResponder()
+//            }
+//            
+//        }
+//    }
+//}
 

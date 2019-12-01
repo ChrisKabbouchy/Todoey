@@ -7,12 +7,13 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryTableViewController: UITableViewController {
     
-    var listCategory = [CategoryData]()
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let realm = try! Realm()
+    
+    var listCategory : Results<CategoryData>?
     
     @IBOutlet weak var searchBar: UISearchBar!
     
@@ -29,11 +30,10 @@ class CategoryTableViewController: UITableViewController {
         let action =  UIAlertAction(title: "Add Category", style: .default) { (action) in
             // action is the user pressed the button
             
-            let newItem = CategoryData(context: self.context)
+            let newItem = CategoryData()
             newItem.name = textField.text!
-            
-            self.listCategory.append(newItem)
-            self.saveData()
+        
+            self.saveData(category: newItem)
             
             //self.defaults.set(self.list.last?.item, forKey: "ToDoItem")
             self.tableView.reloadData()
@@ -49,22 +49,20 @@ class CategoryTableViewController: UITableViewController {
     
     //MARK: -Data Manipulation
     
-    func saveData(){
+    func saveData(category: CategoryData){
         
         do{
-            try context.save()
+            try realm.write {
+                realm.add(category)
+            }
         }catch{
             print("error while saving context\(error)")
         }
     }
     
-    func loadData(with request : NSFetchRequest<CategoryData> = CategoryData.fetchRequest()) {
+    func loadData() {
         
-        do {
-            listCategory = try context.fetch(request)
-        } catch  {
-            print("error while fetching contex\(error)")
-        }
+        listCategory = realm.objects(CategoryData.self)
         
         tableView.reloadData()
     }
@@ -73,12 +71,12 @@ class CategoryTableViewController: UITableViewController {
     //MARK: - TableView Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return listCategory.count
+        return listCategory?.count ?? 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let  cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell" , for: indexPath)
-        cell.textLabel?.text = listCategory[indexPath.row].name
+        cell.textLabel?.text = listCategory?[indexPath.row].name ?? "No Data"
         return cell
     }
     
@@ -89,7 +87,7 @@ class CategoryTableViewController: UITableViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let destinationVC = segue.destination as! ToDoListViewController
         let indexPath = tableView.indexPathForSelectedRow!
-        destinationVC.parentCategory = listCategory[indexPath.row]
+        destinationVC.parentCategory = listCategory?[indexPath.row]
         
     }
 }
@@ -98,28 +96,28 @@ class CategoryTableViewController: UITableViewController {
 
 //MARK: -SearchBar functions
 
-extension CategoryTableViewController : UISearchBarDelegate{
-    
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        
-        let request : NSFetchRequest<CategoryData> = CategoryData.fetchRequest()
-        request.predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
-        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-        loadData(with: request)
-    }
-    
-    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        loadData()
-    }
-    
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchBar.text?.count == 0{
-            loadData()
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
-            
-        }
-    }
-}
+//extension CategoryTableViewController : UISearchBarDelegate{
+//
+//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+//
+//        let request : NSFetchRequest<CategoryData> = CategoryData.fetchRequest()
+//        request.predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
+//        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+//        loadData(with: request)
+//    }
+//
+//    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+//        loadData()
+//    }
+//
+//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+//        if searchBar.text?.count == 0{
+//            loadData()
+//            DispatchQueue.main.async {
+//                searchBar.resignFirstResponder()
+//            }
+//
+//        }
+//    }
+//}
 
