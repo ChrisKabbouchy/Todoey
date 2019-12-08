@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import SwipeCellKit
 
 class ToDoListViewController: UITableViewController{
     
@@ -26,6 +27,7 @@ class ToDoListViewController: UITableViewController{
     override func viewDidLoad() {
         super.viewDidLoad()
         loadData()
+        tableView.rowHeight = 80.0
         // Do any additional setup after loading the view.
     }
     
@@ -88,9 +90,10 @@ class ToDoListViewController: UITableViewController{
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath) as! SwipeTableViewCell
         
         cell.textLabel?.text = list?[indexPath.row].item ?? "No Data"
+        cell.delegate = self
         
         if let item = list?[indexPath.row].selected{
             cell.accessoryType = item ? .checkmark : .none
@@ -120,6 +123,41 @@ class ToDoListViewController: UITableViewController{
         
         
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+}
+
+
+//MARK: -Swipe Kit View delegate
+
+extension ToDoListViewController : SwipeTableViewCellDelegate {
+    
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
+        guard orientation == .right else { return nil }
+
+        let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
+            // handle action by updating model with deletion
+            do{
+                try self.realm.write {
+                    //let newItem = self.listCategory![]
+                    self.realm.delete(self.list![indexPath.row])
+                }
+            }catch{ 
+                print(error)
+            }
+        }
+
+        // customize the action appearance
+        deleteAction.image = UIImage(systemName: "trash.circle.fill")
+
+        return [deleteAction]
+    }
+    
+    
+    func tableView(_ tableView: UITableView, editActionsOptionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> SwipeOptions {
+        var options = SwipeOptions()
+        options.expansionStyle = .destructive
+        options.transitionStyle = .border
+        return options
     }
 }
 

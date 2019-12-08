@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import SwipeCellKit
 
 class CategoryTableViewController: UITableViewController {
     
@@ -20,6 +21,7 @@ class CategoryTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         loadData()
+        tableView.rowHeight = 80.0
         
     }
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -75,8 +77,9 @@ class CategoryTableViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let  cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell" , for: indexPath)
+        let  cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell" , for: indexPath) as! SwipeTableViewCell
         cell.textLabel?.text = listCategory?[indexPath.row].name ?? "No Data"
+        cell.delegate = self
         return cell
     }
     
@@ -91,6 +94,41 @@ class CategoryTableViewController: UITableViewController {
         
     }
 }
+
+
+//MARK: -Swipe Kit View delegate
+
+extension CategoryTableViewController : SwipeTableViewCellDelegate {
+    
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
+        guard orientation == .right else { return nil }
+
+        let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
+            // handle action by updating model with deletion
+            do{
+                try self.realm.write {
+                    //let newItem = self.listCategory![]
+                    self.realm.delete(self.listCategory![indexPath.row])
+                }
+            }catch{
+                print(error)
+            }
+        }
+
+        // customize the action appearance
+        deleteAction.image = UIImage(systemName: "trash")
+
+        return [deleteAction]
+    }
+    
+    func tableView(_ tableView: UITableView, editActionsOptionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> SwipeOptions {
+        var options = SwipeOptions()
+        options.expansionStyle = .destructive
+        options.transitionStyle = .border
+        return options
+    }
+}
+
 
 
 
